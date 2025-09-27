@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>リンク内に記事を表示</title>
+    <style>
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .header h1 {
+            margin: 0;
+        }
+
+        .header button {
+            height: 140%;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .recently {
+            background-color: #D3E173;
+        }
+
+        .articles {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .article-container {
+            display: block;
+            width: 40%;
+            text-decoration: none;
+            color: inherit;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            transition: background-color 0.3s;
+        }
+
+        .article-container:hover {
+            background-color: #e0e0e0;
+        }
+
+        .article-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .article-title {
+            padding: 10px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .article-summary {
+            color: #777;
+            margin-top: 5px;
+            display: block;
+            max-height: 60px;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .context-menu {
+            position: absolute;
+            background-color: white;
+            border: 1px solid #ccc;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            display: none;
+            z-index: 100;
+        }
+
+        .context-menu button {
+            padding: 8px;
+            cursor: pointer;
+            border: none;
+            background-color: #fff;
+            text-align: left;
+            width: 100%;
+        }
+
+        .context-menu button:hover {
+            background-color: #f0f0f0;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+    <div class="header">
+        <h1>私の成長日記</h1>
+        <a href="file:///C:/Users/yukku/Desktop/web/index2.html">
+            <button>記事を追加</button>
+        </a>
+    </div>
+
+    <div class="about">
+        <p>成長記録を何でも載せます</p>
+        <p>変な奴もありますが、まぁ許せ</p>
+    </div>
+
+    <div class="recently">
+        <p>最近の記事</p>
+        <div class="articles" id="articles"></div>
+    </div>
+
+    <div class="context-menu" id="contextMenu">
+        <button id="deleteArticle">削除</button>
+    </div>
+
+    <script>
+        const markedInstance = new marked.Marked();
+        const contextMenu = document.getElementById("contextMenu");
+        let selectedArticle = null;
+
+        // 記事データの表示
+        function displayArticles() {
+            const articlesContainer = document.getElementById("articles");
+            const articlesData = JSON.parse(localStorage.getItem("articlesData")) || [];
+
+            if (!articlesData.length) {
+                articlesContainer.innerHTML = "<p>記事がありません。</p>";
+                return;
+            }
+
+            articlesContainer.innerHTML = ""; // 初期化
+
+            articlesData.forEach((article, index) => {
+                const articleElement = document.createElement("a");
+                articleElement.href = article.url;
+                articleElement.className = "article-container";
+                articleElement.id = `article-${index}`;
+
+                articleElement.innerHTML = `
+                    <img src="${article.imgSrc}" alt="${article.imgAlt}">
+                    <div class="article-title">${article.title}</div>
+                    <div class="article-summary">${markedInstance.parse(article.summary)}</div>
+                    <div class="article-fullText">${markedInstance.parse(article.fullText)}</div>
+                `;
+
+                // 右クリックでメニュー表示
+                articleElement.addEventListener('contextmenu', function(event) {
+                    event.preventDefault();
+                    selectedArticle = { index, element: articleElement };
+                    contextMenu.style.top = `${event.clientY}px`;
+                    contextMenu.style.left = `${event.clientX}px`;
+                    contextMenu.style.display = 'block';
+                });
+
+                articlesContainer.appendChild(articleElement);
+            });
+        }
+
+        // 削除ボタンのイベントリスナーを右クリックメニュー表示後に追加
+        document.getElementById("deleteArticle").addEventListener('click', function() {
+            if (selectedArticle) {
+                const articlesData = JSON.parse(localStorage.getItem("articlesData")) || [];
+                articlesData.splice(selectedArticle.index, 1);  // 削除
+                localStorage.setItem("articlesData", JSON.stringify(articlesData));
+                selectedArticle.element.remove();  // ページ上から削除
+                contextMenu.style.display = 'none';  // メニュー非表示
+            }
+        });
+
+        window.onload = displayArticles;
+
+        // メニュー外クリックで非表示
+        document.addEventListener('click', function(event) {
+            if (!contextMenu.contains(event.target)) {
+                contextMenu.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

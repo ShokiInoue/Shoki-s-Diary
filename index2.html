@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>記事作成フォーム</title>
+    <style>
+        #new_article {
+            width: 400px;
+            height: 100px;
+        }
+        #imagePreview {
+            max-width: 100px;
+            max-height: 100px;
+            display: block;
+            margin-top: 10px;
+        }
+    </style>
+    <!-- marked.jsのCDN -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        console.log("marked:",typeof marked);
+    </script>
+</head>
+<body>
+    <div class="header">
+        <h1>記事の追加</h1>
+    </div>
+
+    <a href="file:///C:/Users/yukku/Desktop/web/index.html">
+        <button>元に戻る</button>
+    </a>
+
+    <form id="articleForm">
+        <label for="url">URLは自動で生成されます</label>
+        <input type="hidden" id="url">
+        <br><br>
+
+        <label for="image">画像ファイル：</label>
+        <input type="file" id="image" accept="image/png, image/jpeg" required>
+        <img id="imagePreview" alt="プレビュー画像">
+        <br><br>
+
+        <label for="title">タイトル：</label>
+        <input type="text" id="title" placeholder="タイトルを入力" required>
+        <br><br>
+
+        <label for="summary">要約 (Markdown)：</label>
+        <textarea id="summary" rows="3" placeholder="Markdown形式で要約を入力" required></textarea>
+        <br><br>
+
+        <label for="fullText">本文 (Markdown)：</label>
+        <textarea id="fullText" rows="10" placeholder="Markdown形式で本文を入力" required></textarea>
+        <br><br>
+
+        <button type="button" onclick="saveArticle()">記事を追加</button>
+    </form>
+
+    <script>
+        function createSlug(title){
+            return title
+                .toLowerCase()  // 小文字に変換
+                .replace(/[^a-z0-9\s-]/g, '')  // 特殊文字を削除
+                .replace(/\s+/g, '-')  // スペースをハイフンに変換
+                .replace(/-+/g, '-'); 
+        }
+        // ファイルが選択されたときのプレビュー表示
+        document.getElementById("image").addEventListener("change", function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById("imagePreview").src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // 記事をlocalStorageに保存
+        function saveArticle() {
+            const title=document.getElementsById("title").value;
+            const fileInput = document.getElementById("image");
+            
+            const generatedUrl=createSlug("title")+".html";
+            document.getElementsById("url").value=generatedUrl;
+
+            const article = {
+                url: generatedUrl,
+                imgSrc: fileInput.files[0] ? document.getElementById("imagePreview").src : "",
+                imgAlt: "記事タイトル画像",
+                title: document.getElementById("title").value,
+                summary: document.getElementById("summary").value,
+                fullText: document.getElementById("fullText").value
+            };
+
+            // 現在のデータを取得して更新
+            const articlesData = JSON.parse(localStorage.getItem("articlesData")) || [];
+            articlesData.push(article);
+
+            // データをlocalStorageに保存
+            localStorage.setItem("articlesData", JSON.stringify(articlesData));
+
+            // 確認メッセージとフォームのリセット
+            alert("記事が追加されました！");
+            document.getElementById("articleForm").reset();
+            document.getElementById("imagePreview").src = ""; // プレビューリセット
+        }
+
+    </script>
+</body>
+</html>
