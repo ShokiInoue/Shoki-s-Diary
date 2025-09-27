@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>記事詳細</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    .article-detail {
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #fff;
+    }
+    .article-detail img {
+      max-width: 100%;
+      height: auto;
+    }
+    .article-detail h1 {
+      margin-top: 10px;
+    }
+    .article-detail .summary {
+      color: #666;
+      margin: 10px 0;
+    }
+    .article-detail .tags {
+      margin-top: 15px;
+      font-size: 14px;
+      color: #444;
+    }
+    .tag {
+      display: inline-block;
+      background: #eef;
+      padding: 4px 8px;
+      margin: 3px;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="article-detail" id="article"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT.appspot.com",
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    async function loadArticle() {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get("id");
+      if (!id) {
+        document.getElementById("article").innerHTML = "<p>記事が見つかりません。</p>";
+        return;
+      }
+
+      try {
+        const docRef = doc(db, "articles", id);
+        const docSnap = await getDoc(docRef);
+
+        if (!docSnap.exists()) {
+          document.getElementById("article").innerHTML = "<p>記事が存在しません。</p>";
+          return;
+        }
+
+        const article = docSnap.data();
+        const tagsHTML = article.tags && article.tags.length > 0
+          ? `<div class="tags">タグ: ${article.tags.map(tag => `<span class="tag">${tag}</span>`).join("")}</div>`
+          : "";
+
+        const articleDiv = document.getElementById("article");
+        articleDiv.innerHTML = `
+          <img src="${article.imageUrl}" alt="記事画像">
+          <h1>${article.title}</h1>
+          <div class="summary">${marked.parse(article.summary)}</div>
+          <div class="body">${marked.parse(article.fullText)}</div>
+          ${tagsHTML}
+        `;
+      } catch (err) {
+        console.error("記事取得エラー:", err);
+        document.getElementById("article").innerHTML = "<p>記事の取得に失敗しました。</p>";
+      }
+    }
+
+    loadArticle();
+  </script>
+</body>
+</html>
