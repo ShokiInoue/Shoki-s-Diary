@@ -1,112 +1,68 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>記事作成フォーム</title>
-    <style>
-        #new_article {
-            width: 400px;
-            height: 100px;
-        }
-        #imagePreview {
-            max-width: 100px;
-            max-height: 100px;
-            display: block;
-            margin-top: 10px;
-        }
-    </style>
-    <!-- marked.jsのCDN -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script>
-        console.log("marked:",typeof marked);
-    </script>
-</head>
-<body>
-    <div class="header">
-        <h1>記事の追加</h1>
-    </div>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+  import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-firestore.js";
+  import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-storage.js";
 
-    <a href="https://shokiinoue.github.io/Shoki-s-Diary/">
-        <button>元に戻る</button>
-    </a>
+  // ✅ Firebase設定（ご自身の値に置き換え）
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+  };
 
-    <form id="articleForm">
-        <label for="url">URLは自動で生成されます</label>
-        <input type="hidden" id="url">
-        <br><br>
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const storage = getStorage(app);
 
-        <label for="image">画像ファイル：</label>
-        <input type="file" id="image" accept="image/png, image/jpeg" required>
-        <img id="imagePreview" alt="プレビュー画像">
-        <br><br>
+  // 記事保存処理
+  async function saveArticle() {
+    const title = document.getElementById("title").value;
+    const summary = document.getElementById("summary").value;
+    const fullText = document.getElementById("fullText").value;
+    const file = document.getElementById("image").files[0];
 
-        <label for="title">タイトル：</label>
-        <input type="text" id="title" placeholder="タイトルを入力" required>
-        <br><br>
+    if (!title || !summary || !fullText) {
+      alert("必須項目を入力してください");
+      return;
+    }
 
-        <label for="summary">要約 (Markdown)：</label>
-        <textarea id="summary" rows="3" placeholder="Markdown形式で要約を入力" required></textarea>
-        <br><br>
+    try {
+      let imageUrl = "";
+      if (file) {
+        const storageRef = ref(storage, "articles/" + Date.now() + "_" + file.name);
+        await uploadBytes(storageRef, file);
+        imageUrl = await getDownloadURL(storageRef);
+      }
 
-        <label for="fullText">本文 (Markdown)：</label>
-        <textarea id="fullText" rows="10" placeholder="Markdown形式で本文を入力" required></textarea>
-        <br><br>
+      await addDoc(collection(db, "articles"), {
+        title,
+        summary,
+        fullText,
+        imageUrl,
+        createdAt: serverTimestamp()
+      });
 
-        <button type="button" onclick="saveArticle()">記事を追加</button>
-    </form>
+      alert("記事が追加されました！");
+      document.getElementById("articleForm").reset();
+      document.getElementById("imagePreview").src = "";
 
-    <script>
-        function createSlug(title){
-            return title
-                .toLowerCase()  // 小文字に変換
-                .replace(/[^a-z0-9\s-]/g, '')  // 特殊文字を削除
-                .replace(/\s+/g, '-')  // スペースをハイフンに変換
-                .replace(/-+/g, '-'); 
-        }
-        // ファイルが選択されたときのプレビュー表示
-        document.getElementById("image").addEventListener("change", function() {
-            const file = this.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    document.getElementById("imagePreview").src = e.target.result;
-                }
-                reader.readAsDataURL(file);
-            }
-        });
+    } catch (err) {
+      console.error("保存エラー:", err);
+      alert("記事の保存に失敗しました");
+    }
+  }
 
-        // 記事をlocalStorageに保存
-        function saveArticle() {
-            const title=document.getElementsById("title").value;
-            const fileInput = document.getElementById("image");
-            
-            const generatedUrl=createSlug("title")+".html";
-            document.getElementsById("url").value=generatedUrl;
+  // プレビュー表示
+  document.getElementById("image").addEventListener("change", function() {
+    const file = this.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = e => document.getElementById("imagePreview").src = e.target.result;
+      reader.readAsDataURL(file);
+    }
+  });
 
-            const article = {
-                url: generatedUrl,
-                imgSrc: fileInput.files[0] ? document.getElementById("imagePreview").src : "",
-                imgAlt: "記事タイトル画像",
-                title: document.getElementById("title").value,
-                summary: document.getElementById("summary").value,
-                fullText: document.getElementById("fullText").value
-            };
-
-            // 現在のデータを取得して更新
-            const articlesData = JSON.parse(localStorage.getItem("articlesData")) || [];
-            articlesData.push(article);
-
-            // データをlocalStorageに保存
-            localStorage.setItem("articlesData", JSON.stringify(articlesData));
-
-            // 確認メッセージとフォームのリセット
-            alert("記事が追加されました！");
-            document.getElementById("articleForm").reset();
-            document.getElementById("imagePreview").src = ""; // プレビューリセット
-        }
-
-    </script>
-</body>
-</html>
-
+  // ボタンから呼び出せるように
+  window.saveArticle = saveArticle;
+</script>
