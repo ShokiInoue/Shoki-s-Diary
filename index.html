@@ -1,64 +1,71 @@
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
-  import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-firestore.js";
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>記事一覧</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+    import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBSDk3yqNU895fb7ujUE4wlSloIfke2h-I",
-  authDomain: "shoki-diary.firebaseapp.com",
-  projectId: "shoki-diary",
-  storageBucket: "shoki-diary.firebasestorage.app",
-  messagingSenderId: "445524613145",
-  appId: "1:445524613145:web:1e8f5892fdd5ca926c3288",
-  measurementId: "G-1NB5B06DYS"
-};
+    const firebaseConfig = {
+      apiKey: "AIzaSyBSDk3yqNU895fb7ujUE4wlSloIfke2h-I",
+      authDomain: "shoki-diary.firebaseapp.com",
+      projectId: "shoki-diary",
+      storageBucket: "shoki-diary.appspot.com",  <!-- ← ここも修正 (末尾は .app ではなく .appspot.com) -->
+      messagingSenderId: "445524613145",
+      appId: "1:445524613145:web:1e8f5892fdd5ca926c3288",
+      measurementId: "G-1NB5B06DYS"
+    };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-  async function displayArticles() {
-    const articlesContainer = document.getElementById("articles");
-    articlesContainer.innerHTML = "<p>読み込み中...</p>";
+    async function displayArticles() {
+      const articlesContainer = document.getElementById("articles");
+      articlesContainer.innerHTML = "<p>読み込み中...</p>";
 
-    try {
-      const q = query(collection(db, "articles"), orderBy("createdAt", "desc"));
-      const querySnapshot = await getDocs(q);
+      try {
+        const q = query(collection(db, "articles"), orderBy("createdAt", "desc"));
+        const querySnapshot = await getDocs(q);
 
-      articlesContainer.innerHTML = "";
-      if (querySnapshot.empty) {
-        articlesContainer.innerHTML = "<p>記事がありません。</p>";
-        return;
+        articlesContainer.innerHTML = "";
+        if (querySnapshot.empty) {
+          articlesContainer.innerHTML = "<p>記事がありません。</p>";
+          return;
+        }
+
+        querySnapshot.forEach((doc) => {
+          const article = doc.data();
+          const articleElement = document.createElement("a");
+          articleElement.href = `article.html?id=${doc.id}`;
+          articleElement.className = "article-container";
+
+          articleElement.innerHTML = `
+            <img src="${article.imageUrl}" alt="記事画像">
+            <div class="article-title">${article.title}</div>
+            <div class="article-summary">${marked.parse(article.summary)}</div>
+          `;
+
+          articlesContainer.appendChild(articleElement);
+        });
+
+      } catch (err) {
+        console.error("読み込みエラー:", err);
+        articlesContainer.innerHTML = "<p>記事の取得に失敗しました</p>";
       }
-
-      querySnapshot.forEach((doc) => {
-        const article = doc.data();
-        const articleElement = document.createElement("a");
-        articleElement.href = `article.html?id=${doc.id}`;
-        articleElement.className = "article-container";
-
-        articleElement.innerHTML = `
-          <img src="${article.imageUrl}" alt="記事画像">
-          <div class="article-title">${article.title}</div>
-          <div class="article-summary">${marked.parse(article.summary)}</div>
-        `;
-
-        articlesContainer.appendChild(articleElement);
-      });
-
-    } catch (err) {
-      console.error("読み込みエラー:", err);
-      articlesContainer.innerHTML = "<p>記事の取得に失敗しました</p>";
     }
-  }
 
-  window.onload = displayArticles;
-
-  <body>
+    window.onload = displayArticles;
+  </script>
+</head>
+<body>
   <div class="recently">
     <p>最近の記事</p>
     <div class="articles" id="articles"></div>
   </div>
 </body>
-</script>
+</html>
 
 
 
