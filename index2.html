@@ -1,75 +1,108 @@
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-  import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-  import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-storage.js";
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>記事の追加</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+  <div class="header">
+    <h1>記事の追加</h1>
+  </div>
 
-  // ✅ ご自身の Firebase 設定を貼り付ける
-  const firebaseConfig = {
-    apiKey: "AIzaSyBSDk3yqNU895fb7ujUE4wlSloIfke2h-I",
-    authDomain: "shoki-diary.firebaseapp.com",
-    projectId: "shoki-diary",
-    storageBucket: "shoki-diary.firebasestorage.app",
-  };
+  <a href="index.html">
+    <button>元に戻る</button>
+  </a>
 
-  // Firebase初期化
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-  const storage = getStorage(app);
+  <form id="articleForm">
+    <label for="image">画像ファイル：</label>
+    <input type="file" id="image" accept="image/png, image/jpeg" required />
+    <img id="imagePreview" alt="プレビュー画像" />
+    <br /><br />
 
-  // 📝 記事保存処理
-  async function saveArticle() {
-    const title = document.getElementById("title").value.trim();
-    const summary = document.getElementById("summary").value.trim();
-    const fullText = document.getElementById("fullText").value.trim();
-    const file = document.getElementById("image").files[0];
+    <label for="title">タイトル：</label>
+    <input type="text" id="title" placeholder="タイトルを入力" required />
+    <br /><br />
 
-    if (!title || !summary || !fullText) {
-      alert("すべての必須項目を入力してください。");
-      return;
-    }
+    <label for="summary">要約：</label>
+    <textarea id="summary" rows="3" required></textarea>
+    <br /><br />
 
-    try {
-      let imgSrc = "";
-      if (file) {
-        // Firebase Storage に画像をアップロード
-        const storageRef = ref(storage, `articles/${Date.now()}_${file.name}`);
-        await uploadBytes(storageRef, file);
-        imgSrc = await getDownloadURL(storageRef);
+    <label for="fullText">本文：</label>
+    <textarea id="fullText" rows="10" required></textarea>
+    <br /><br />
+
+    <button type="button" onclick="saveArticle()">記事を追加</button>
+  </form>
+
+  <!-- 👇 ここにあなたのスクリプトを貼り付けます 👇 -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-storage.js";
+
+    // ✅ Firebase設定
+    const firebaseConfig = {
+      apiKey: "AIzaSyBSDk3yqNU895fb7ujUE4wlSloIfke2h-I",
+      authDomain: "shoki-diary.firebaseapp.com",
+      projectId: "shoki-diary",
+      storageBucket: "shoki-diary.firebasestorage.app",
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+
+    async function saveArticle() {
+      const title = document.getElementById("title").value.trim();
+      const summary = document.getElementById("summary").value.trim();
+      const fullText = document.getElementById("fullText").value.trim();
+      const file = document.getElementById("image").files[0];
+
+      if (!title || !summary || !fullText) {
+        alert("すべての必須項目を入力してください。");
+        return;
       }
 
-      // Firestore に記事データを保存
-      await addDoc(collection(db, "articles"), {
-        title,
-        summary,
-        fullText,
-        imgSrc, // ← ここで画像URLを保存
-        createdAt: serverTimestamp(),
-      });
+      try {
+        let imgSrc = "";
+        if (file) {
+          const storageRef = ref(storage, `articles/${Date.now()}_${file.name}`);
+          await uploadBytes(storageRef, file);
+          imgSrc = await getDownloadURL(storageRef);
+        }
 
-      alert("記事が追加されました！");
-      document.getElementById("articleForm").reset();
-      document.getElementById("imagePreview").src = "";
+        await addDoc(collection(db, "articles"), {
+          title,
+          summary,
+          fullText,
+          imgSrc,
+          createdAt: serverTimestamp(),
+        });
 
-    } catch (error) {
-      console.error("保存エラー:", error);
-      alert("記事の保存に失敗しました。");
+        alert("記事が追加されました！");
+        document.getElementById("articleForm").reset();
+        document.getElementById("imagePreview").src = "";
+      } catch (error) {
+        console.error("保存エラー:", error);
+        alert("記事の保存に失敗しました。");
+      }
     }
-  }
 
-  // 🖼 プレビュー表示
-  document.getElementById("image").addEventListener("change", (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        document.getElementById("imagePreview").src = ev.target.result;
-      };
-      reader.readAsDataURL(file);
-    }
-  });
+    // 🖼 プレビュー処理
+    document.getElementById("image").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          document.getElementById("imagePreview").src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
 
-  // ボタンから呼び出せるように
-  window.saveArticle = saveArticle;
-</script>
-
-
+    window.saveArticle = saveArticle;
+  </script>
+</body>
+</html>
