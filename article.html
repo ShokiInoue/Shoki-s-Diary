@@ -33,6 +33,19 @@
         if (docSnap.exists()) {
           const data = docSnap.data();
           document.getElementById("title").textContent = data.title || "無題";
+
+          // 画像
+          const imgSrc = data.imgSrc || "";
+          if (imgSrc) {
+            const imgEl = document.createElement("img");
+            imgEl.src = imgSrc;
+            imgEl.alt = "記事画像";
+            imgEl.style.maxWidth = "100%";
+            imgEl.style.borderRadius = "8px";
+            imgEl.style.margin = "10px 0";
+            document.getElementById("image").appendChild(imgEl);
+          }
+
           document.getElementById("summary").innerHTML = marked.parse(data.summary || "(要約なし)");
           document.getElementById("fullText").innerHTML = marked.parse(data.fulltext || "(本文なし)");
         } else {
@@ -77,12 +90,16 @@
     a:hover {
       text-decoration: underline;
     }
+    img {
+      display: block;
+    }
   </style>
 </head>
 <body>
   <a href="index.html">← 一覧に戻る</a>
   <div class="content">
     <h1 id="title"></h1>
+    <div id="image"></div>
     <h2>【要約】</h2>
     <div id="summary"></div>
     <h2>【本文】</h2>
