@@ -8,7 +8,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
     import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-    // ✅ Firebase 設定（index2.html と揃える）
     const firebaseConfig = {
       apiKey: "AIzaSyBSDk3yqNU895fb7ujUE4wlSloIfke2h-I",
       authDomain: "shoki-diary.firebaseapp.com",
@@ -19,7 +18,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // ✅ Firestoreから記事を取得して表示
     async function displayArticles() {
       const articlesContainer = document.getElementById("articles");
       articlesContainer.innerHTML = "<p>読み込み中...</p>";
@@ -36,14 +34,15 @@
 
         querySnapshot.forEach((doc) => {
           const article = doc.data();
+          const id = doc.id;
 
-          // ✅ Firestoreのフィールド名に合わせる
           const title = article.title || "タイトルなし";
           const summary = article.summary || "";
-          const imgSrc = article.imgSrc || "https://via.placeholder.com/300x200?text=No+Image";
+          const imgSrc = article.imgSrc || "no-image.png";
 
-          // ✅ HTML要素を作成
-          const articleElement = document.createElement("div");
+          // ✅ 記事をクリックしたら詳細ページに移動
+          const articleElement = document.createElement("a");
+          articleElement.href = `article.html?id=${id}`;
           articleElement.className = "article-container";
 
           articleElement.innerHTML = `
@@ -105,6 +104,8 @@
       overflow: hidden;
       box-shadow: 0 1px 4px rgba(0,0,0,0.1);
       transition: transform 0.2s;
+      text-decoration: none;
+      color: inherit;
     }
     .article-container:hover {
       transform: translateY(-3px);
