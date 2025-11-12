@@ -21,9 +21,8 @@
     async function loadArticle() {
       const params = new URLSearchParams(window.location.search);
       const id = params.get("id");
-
       if (!id) {
-        document.getElementById("content").innerHTML = "<p>記事IDが指定されていません。</p>";
+        document.body.innerHTML = "<p>記事が見つかりません。</p>";
         return;
       }
 
@@ -31,18 +30,17 @@
         const docRef = doc(db, "articles", id);
         const docSnap = await getDoc(docRef);
 
-        if (!docSnap.exists()) {
-          document.getElementById("content").innerHTML = "<p>記事が見つかりません。</p>";
-          return;
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          document.getElementById("title").textContent = data.title || "無題";
+          document.getElementById("summary").innerHTML = marked.parse(data.summary || "(要約なし)");
+          document.getElementById("fullText").innerHTML = marked.parse(data.fulltext || "(本文なし)");
+        } else {
+          document.body.innerHTML = "<p>記事が見つかりません。</p>";
         }
-
-        const article = docSnap.data();
-        document.getElementById("title").textContent = article.title || "タイトルなし";
-        document.getElementById("image").src = article.imgSrc || "no-image.png";
-        document.getElementById("body").innerHTML = marked.parse(article.content || article.summary || "");
       } catch (err) {
-        console.error("記事取得エラー:", err);
-        document.getElementById("content").innerHTML = "<p>記事の取得に失敗しました。</p>";
+        console.error("読み込みエラー:", err);
+        document.body.innerHTML = "<p>記事の読み込みに失敗しました。</p>";
       }
     }
 
@@ -52,42 +50,43 @@
   <style>
     body {
       font-family: "Helvetica", "Arial", sans-serif;
-      margin: 0;
-      padding: 0;
+      margin: 20px;
       background-color: #fafafa;
+      color: #222;
+      line-height: 1.6;
     }
-    header {
-      background: white;
-      border-bottom: 1px solid #ddd;
-      padding: 10px 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    h1 {
+      font-size: 26px;
+      margin-bottom: 10px;
     }
-    main {
-      max-width: 800px;
-      margin: 20px auto;
-      background: white;
+    h2 {
+      font-size: 20px;
+      margin-top: 20px;
+      margin-bottom: 8px;
+    }
+    .content {
+      background: #fff;
       border-radius: 8px;
       padding: 20px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
     }
-    img {
-      max-width: 100%;
-      border-radius: 8px;
-      margin-bottom: 16px;
+    a {
+      text-decoration: none;
+      color: #007bff;
+    }
+    a:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1 id="title">読み込み中...</h1>
-    <a href="index.html">← 戻る</a>
-  </header>
-
-  <main id="content">
-    <img id="image" alt="記事画像">
-    <div id="body"></div>
-  </main>
+  <a href="index.html">← 一覧に戻る</a>
+  <div class="content">
+    <h1 id="title"></h1>
+    <h2>【要約】</h2>
+    <div id="summary"></div>
+    <h2>【本文】</h2>
+    <div id="fullText"></div>
+  </div>
 </body>
 </html>
