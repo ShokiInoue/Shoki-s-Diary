@@ -66,6 +66,14 @@
       }
 
       try {
+          // ここで articleData を必ず作る
+        const articleData = {
+          title: title || "",
+          summary: summary || "",
+          fullText: fullText || "",
+          createdAt: serverTimestamp(),
+        };
+        
         let imgSrc;
         if (file) {
           const storageRef = ref(storage, `articles/${Date.now()}_${file.name}`);
@@ -75,13 +83,7 @@
 
         if (imgSrc) articleData.imgSrc = imgSrc; // 画像がある場合のみ追加
         
-        await addDoc(collection(db, "articles"), {
-          title,
-          summary,
-          fullText,
-          imgSrc,
-          createdAt: serverTimestamp(),
-        });
+        await addDoc(collection(db, "articles"),articleData);
 
         alert("記事が追加されました！");
         document.getElementById("articleForm").reset();
@@ -108,6 +110,7 @@
   </script>
 </body>
 </html>
+
 
 
 
