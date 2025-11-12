@@ -47,7 +47,7 @@
           }
 
           document.getElementById("summary").innerHTML = marked.parse(data.summary || "(要約なし)");
-          document.getElementById("fullText").innerHTML = marked.parse(data.fulltext || "(本文なし)");
+          document.getElementById("fullText").innerHTML = marked.parse(data.fullText || "(本文なし)");
         } else {
           document.body.innerHTML = "<p>記事が見つかりません。</p>";
         }
