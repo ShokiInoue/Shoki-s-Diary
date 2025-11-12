@@ -48,11 +48,22 @@
       authDomain: "shoki-diary.firebaseapp.com",
       projectId: "shoki-diary",
       storageBucket: "shoki-diary.firebasestorage.app",
+      messagingSenderId: "445524613145",
+      appId: "1:445524613145:web:1e8f5892fdd5ca926c3288"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const storage = getStorage(app);
+    const auth = getAuth(app);
+
+    signInAnonymously(auth)
+      .then(() => {
+        console.log("✅ 匿名ログイン成功");
+      })
+      .catch((error) => {
+        console.error("❌ 匿名ログイン失敗:", error);
+      });
 
     async function saveArticle() {
       const title = document.getElementById("title").value.trim();
@@ -110,6 +121,7 @@
   </script>
 </body>
 </html>
+
 
 
 
